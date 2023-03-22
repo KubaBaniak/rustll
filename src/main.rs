@@ -1,37 +1,25 @@
-use std::fs::File;
-use std::mem::size_of;
 use std::path::Path;
 use std::collections::HashMap;
-use std::f32::consts::PI;
-
-#[derive(Debug)]
-struct FileProb {
-    ext: String,
-    prob: f32,
-}
+use std::f64::consts::PI;
 
 
 fn main() {
-    let destination = String::from("./");
+    let destination = String::from("/home/kuba/studia/");
     let path = Path::new(&destination);
 
-    let indent: usize = 0; // ??? does it have to be here?
-    display_all_files(path, indent);
+    //let indent: usize = 0; // ??? does it have to be here?
+    //display_all_files(path, indent);
 
     let mut file_ext: HashMap<String, usize> = HashMap::new();
     get_all_extensions(path, &mut file_ext);
     print_hm(&file_ext);
-    println!("{}", change_color_text(226, "siema"));
     default_color_text();
-    println!("SIEEMA");
-
     ext_to_pie_chart(&file_ext);
 }
 
 
 
-fn display_all_files(path: &Path, indent: usize) {
-    for entry in path.read_dir().expect("read_dir should read entry") {
+fn display_all_files(path: &Path, indent: usize) { for entry in path.read_dir().expect("read_dir should read entry") {
         if let Ok(entry) = entry {
             let temp_path = entry.path();
 
@@ -62,16 +50,10 @@ fn get_all_extensions(path: & Path, map: &mut HashMap<String, usize>) {
     }
 }
 
-fn print_hm(map: & HashMap<String, usize>) {
-    for (key, value) in map.iter() {
-        println!("{key}: {value}");
-    }
-}
 
+fn print_pie_chart(k: &Vec<char>, v: &Vec<f64>, r: i32) {
 
-fn print_pie_chart(k: &Vec<char>, v: &Vec<f32>, r: i32) {
-
-    fn s(k: &Vec<char>, v: &Vec<f32>, a: f32) -> char {
+    fn s(k: &Vec<char>, v: &Vec<f64>, a: f64) -> char {
         if v.is_empty() {
             return ' '
         }
@@ -86,17 +68,19 @@ fn print_pie_chart(k: &Vec<char>, v: &Vec<f32>, r: i32) {
         let mut pie = String::new();
         for x in range.clone() {
             if x*x + y*y < r*r {
-                let a = (y as f32).atan2(x as f32) / PI /2.0+0.5;
-                pie.push(s(k, v, a));
+                let a = (y as f64).atan2(x as f64) / PI /2.0+0.5;
+                let letter = s(k, v, a);
+                pie.push_str(&change_color_text(letter as u8, &letter));
             } else {
                 pie.push(' ')
             }
         }
         println!("{}", pie)
     }
+    default_color_text();
 }
 
-fn change_color_text(color: usize, text: &str) -> String {
+fn change_color_text(color: u8, text: &char) -> String {
     format!("\x1b[38;5;{}m{}", color, text)
 }
 
@@ -107,21 +91,24 @@ fn default_color_text() {
 fn ext_to_pie_chart(map: &HashMap<String, usize>) {
     let n: usize = map.values().sum();
     
-    let mut parts: Vec<FileProb> = Vec::new();
+    let mut v: Vec<f64> = Vec::new();
 
-    for (key, value) in map.iter() {
-        parts.push(FileProb { ext: key.clone(), prob: *value as f32/n as f32 });
+    for (_, value) in map.iter() {
+        v.push(*value as f64/n as f64 );
     }
-
-    println!("{:?}\n{}", parts, parts.len());
 
     let mut k: Vec<char> = Vec::new();
-    for i in 65..65+parts.len() {
+    let base_ascii = 97;
+    for i in base_ascii..base_ascii+v.len() {
         k.push( (i as u8) as char)
     }
-    println!("{:?}", k);
-    let v = parts.into_iter().map(|p| p.prob).collect();
-
     let r = 15;
     print_pie_chart(&k, &v, r);
 }
+
+fn print_hm(map: & HashMap<String, usize>) {
+    for (key, value) in map.iter() {
+        println!("{key}: {value}");
+    }
+}
+
