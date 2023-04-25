@@ -1,25 +1,58 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 use std::f64::consts::PI;
+
+struct Folder {
+    map: HashMap<String, usize>,
+}
+
+impl Folder {
+    fn new() -> Self{
+        Folder { 
+            map: HashMap::new(),
+        }
+    }
+
+    fn get_all_extensions(&mut self, path: &PathBuf) {
+        for entry in path.read_dir().expect("read_dir should read entry") {
+            if let Ok(entry) = entry {
+                let temp_path = entry.path();
+                if temp_path.is_dir() {
+                    self.get_all_extensions(&temp_path);
+                } else {
+                    let ext = match temp_path.extension() {
+                        None => String::from("Undefined"),
+                        Some(os_str) => String::from(os_str.to_str().unwrap())
+                    };
+                    let count = self.map.entry(ext).or_insert(0);
+                    *count += 1;
+                }
+            }
+        }
+    }
+}
 
 
 fn main() {
     let destination = String::from("/home/kuba/studia/");
-    let path = Path::new(&destination);
+
+    let path = PathBuf::from(destination);
+    let mut folder = Folder::new();
+
+    folder.get_all_extensions(&path);
 
     //let indent: usize = 0; // ??? does it have to be here?
-    //display_all_files(path, indent);
-
-    let mut file_ext: HashMap<String, usize> = HashMap::new();
-    get_all_extensions(path, &mut file_ext);
-    print_hm(&file_ext);
+    //display_all_files(&folder.path, indent);
+    // change them into more usefull methods
+    print_hm(&folder.map);
     default_color_text();
-    ext_to_pie_chart(&file_ext);
+    ext_to_pie_chart(&folder.map);
 }
 
 
-
-fn display_all_files(path: &Path, indent: usize) { for entry in path.read_dir().expect("read_dir should read entry") {
+#[warn(dead_code)]
+fn display_all_files(path: &Path, indent: usize) { 
+    for entry in path.read_dir().expect("read_dir should read entry") {
         if let Ok(entry) = entry {
             let temp_path = entry.path();
 
@@ -32,27 +65,9 @@ fn display_all_files(path: &Path, indent: usize) { for entry in path.read_dir().
     }
 }
 
-fn get_all_extensions(path: & Path, map: &mut HashMap<String, usize>) {
-    for entry in path.read_dir().expect("read_dir should read entry") {
-        if let Ok(entry) = entry {
-            let temp_path = entry.path();
-            if temp_path.is_dir() {
-                get_all_extensions(&temp_path.clone(), map);
-            } else {
-                let ext = match temp_path.extension() {
-                    None => String::from("Undefined"),
-                    Some(os_str) => String::from(os_str.to_str().unwrap())
-                };
-                let count = map.entry(ext).or_insert(0);
-                *count += 1;
-            }
-        }
-    }
-}
 
 
 fn print_pie_chart(k: &Vec<char>, v: &Vec<f64>, r: i32) {
-
     fn s(k: &Vec<char>, v: &Vec<f64>, a: f64) -> char {
         if v.is_empty() {
             return ' '
